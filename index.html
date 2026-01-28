@@ -1583,6 +1583,23 @@
     // localStorage.removeItem(CHECK_KEY); localStorage.removeItem(ACC_KEY);
   });
 })();
+    // --- Fortschrittsanzeige ---
+  const totalBosses = document.querySelectorAll('.boss-table tbody tr').length;
+  const progress = document.createElement('div');
+  progress.id = 'progress';
+  progress.style.margin = '15px 0';
+  progress.style.fontWeight = 'bold';
+  progress.textContent = `Boss-Fortschritt: 0 / ${totalBosses}`;
+  document.body.insertBefore(progress, document.getElementById('search').nextSibling);
+
+  const checkboxes = document.querySelectorAll('.boss-table tbody input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = document.querySelectorAll('.boss-table tbody input[type="checkbox"]:checked').length;
+      progress.textContent = `Boss-Fortschritt: ${checked} / ${totalBosses}`;
+    });
+  });
+});
 </script>  
 
 
