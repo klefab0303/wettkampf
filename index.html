@@ -1454,131 +1454,136 @@
   
 
 
-
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  // --- Accordion-Funktion ---
-  const accordions = document.querySelectorAll('.accordion');
-  accordions.forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('active');
-      const panel = btn.nextElementSibling;
-      if (panel.style.maxHeight) {
-        panel.style.maxHeight = null;
-      } else {
-        panel.style.maxHeight = panel.scrollHeight + "px";
-      }
+
+// Speichert Checkbox-Zustand, Akkordeonzustand und liefert Suchfilter.
+// Verwendung: <script src="script.js"> direkt vor </body>
+
+(function () {
+  const CHECK_KEY = 'elden_bosses_v1';
+  const ACC_KEY = 'elden_accordion_v1';
+
+  function sanitizeId(s) {
+    return String(s || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_\-]/g, '');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1) ID-Vergabe für Checkboxen (falls noch keine IDs vorhanden)
+    document.querySelectorAll('.region').forEach((regionEl, rIndex) => {
+      const btn = regionEl.querySelector('.accordion');
+      const regionName = btn ? btn.textContent.trim() : `region_${rIndex}`;
+      const idPrefix = sanitizeId(regionName) || `region_${rIndex}`;
+      regionEl.querySelectorAll('tbody tr').forEach((tr, rowIndex) => {
+        const cb = tr.querySelector('input[type="checkbox"]');
+        if (!cb) return;
+        if (!cb.id) cb.id = `${idPrefix}_row_${rowIndex}`;
+      });
     });
-  });
 
-  // --- Suchfunktion ---
-  const searchInput = document.getElementById('search');
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value.toLowerCase();
-    const regions = document.querySelectorAll('.region');
+    // 2) Wiederherstellen der Checkbox-Zustände
+    let savedChecks = {};
+    try {
+      savedChecks = JSON.parse(localStorage.getItem(CHECK_KEY) || '{}');
+    } catch (e) {
+      savedChecks = {};
+    }
+    Object.entries(savedChecks).forEach(([id, checked]) => {
+      const cb = document.getElementById(id);
+      if (cb) cb.checked = !!checked;
+    });
 
-    regions.forEach(region => {
-      const regionName = region.querySelector('.accordion').textContent.toLowerCase();
-      const table = region.querySelector('table');
-      const rows = table.querySelectorAll('tbody tr');
+    // 3) Listener zum Speichern bei Änderung
+    document.querySelectorAll('.boss-table input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        let s = {};
+        try {
+          s = JSON.parse(localStorage.getItem(CHECK_KEY) || '{}');
+        } catch (e) { s = {}; }
+        s[cb.id] = cb.checked;
+        localStorage.setItem(CHECK_KEY, JSON.stringify(s));
+      });
+    });
 
-      let anyVisible = false;
+    // 4) Akkordeon: öffnen/schließen + Zustand speichern
+    const accBtns = Array.from(document.querySelectorAll('.accordion'));
+    let accState = [];
+    try {
+      accState = JSON.parse(localStorage.getItem(ACC_KEY) || '[]');
+    } catch (e) { accState = []; }
 
-      rows.forEach(row => {
-        const rowText = row.textContent.toLowerCase();
-        if (rowText.includes(query) || regionName.includes(query)) {
-          row.style.display = '';
-          anyVisible = true;
+    accBtns.forEach((btn, idx) => {
+      const panel = btn.nextElementSibling;
+      if (!panel) return;
+
+      // initialer Zustand
+      if (accState.includes(idx)) {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      } else {
+        panel.style.maxHeight = null;
+      }
+
+      btn.addEventListener('click', () => {
+        const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+        if (isOpen) {
+          panel.style.maxHeight = null;
+          const p = accState.indexOf(idx);
+          if (p > -1) accState.splice(p, 1);
         } else {
-          row.style.display = 'none';
+          panel.style.maxHeight = panel.scrollHeight + 'px';
+          if (!accState.includes(idx)) accState.push(idx);
+        }
+        localStorage.setItem(ACC_KEY, JSON.stringify(accState));
+      });
+
+      // wenn Panel-Inhalt (z. B. responsive) seine Höhe ändert, maxHeight anpassen
+      const ro = new ResizeObserver(() => {
+        if (panel.style.maxHeight && panel.style.maxHeight !== '0px') {
+          panel.style.maxHeight = panel.scrollHeight + 'px';
         }
       });
-
-      // Region nur anzeigen, wenn mindestens eine Zeile sichtbar ist
-      region.style.display = anyVisible ? '' : 'none';
+      ro.observe(panel);
     });
-  });
 
-  // --- Fortschrittsanzeige ---
-  const totalBosses = document.querySelectorAll('.boss-table tbody tr').length;
-  const progress = document.createElement('div');
-  progress.id = 'progress';
-  progress.style.margin = '15px 0';
-  progress.style.fontWeight = 'bold';
-  progress.textContent = `Boss-Fortschritt: 0 / ${totalBosses}`;
-  document.body.insertBefore(progress, document.getElementById('search').nextSibling);
-
-  const checkboxes = document.querySelectorAll('.boss-table tbody input[type="checkbox"]');
-  checkboxes.forEach(cb => {
-    cb.addEventListener('change', () => {
-      const checked = document.querySelectorAll('.boss-table tbody input[type="checkbox"]:checked').length;
-      progress.textContent = `Boss-Fortschritt: ${checked} / ${totalBosses}`;
-    });
-  });
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const checkboxes = document.querySelectorAll('.boss-table input[type="checkbox"]');
-
-  checkboxes.forEach((checkbox, index) => {
-    const key = `boss-checkbox-${index}`;
-
-    // Zustand beim Laden wiederherstellen
-    const saved = localStorage.getItem(key);
-    if (saved === "true") {
-      checkbox.checked = true;
+    // 5) Suche / Filter
+    const search = document.getElementById('search');
+    function applyFilter(q) {
+      const query = (q || '').trim().toLowerCase();
+      document.querySelectorAll('.region').forEach(region => {
+        const btn = region.querySelector('.accordion');
+        const regionName = (btn ? btn.textContent : '').toLowerCase();
+        const rows = Array.from(region.querySelectorAll('tbody tr'));
+        let anyVisible = false;
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          const match = !query || text.includes(query) || regionName.includes(query);
+          row.style.display = match ? '' : 'none';
+          if (match) anyVisible = true;
+        });
+        const panel = region.querySelector('.panel');
+        // Wenn kein Treffer in der Region, komplett ausblenden (inkl. Button)
+        region.style.display = anyVisible ? '' : 'none';
+        // Option: Wenn Treffer, Panel öffnen automatisch
+        if (anyVisible && panel) {
+          // nur öffnen, nicht überschreiben gespeicherten Zustand
+          panel.style.maxHeight = panel.scrollHeight + 'px';
+        }
+      });
+    }
+    if (search) {
+      search.addEventListener('input', (e) => applyFilter(e.target.value));
+      // optional: initial anwenden (z. B. wenn Query-String vorhanden)
+      applyFilter(search.value);
     }
 
-    // Zustand speichern bei Änderung
-    checkbox.addEventListener("change", () => {
-      localStorage.setItem(key, checkbox.checked);
-    });
+    // Utility: Möglichkeit, LocalStorage zurückzusetzen (für Debug)
+    // localStorage.removeItem(CHECK_KEY); localStorage.removeItem(ACC_KEY);
   });
-});
-
-
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-  // Accordion-Funktion (falls noch nicht vorhanden)
-  document.querySelectorAll(".accordion").forEach(btn => {
-    btn.addEventListener("click", () => {
-      btn.classList.toggle("active");
-      const panel = btn.nextElementSibling;
-      panel.style.maxHeight
-        ? panel.style.maxHeight = null
-        : panel.style.maxHeight = panel.scrollHeight + "px";
-    });
-  });
-
-  // Checkboxen mit stabilem LocalStorage-Key
-  document.querySelectorAll(".region").forEach(region => {
-    const regionName = region.querySelector(".accordion").innerText.trim();
-
-    region.querySelectorAll("tbody tr").forEach(row => {
-      const checkbox = row.querySelector('input[type="checkbox"]');
-      const bossName = row.children[2]?.innerText.trim();
-
-      if (!checkbox || !bossName) return;
-
-      const key = `eldenring:${regionName}:${bossName}`;
-
-      // Zustand laden
-      const saved = localStorage.getItem(key);
-      if (saved === "true") checkbox.checked = true;
-
-      // Zustand speichern
-      checkbox.addEventListener("change", () => {
-        localStorage.setItem(key, checkbox.checked);
-      });
-    });
-  });
-
-});
-</script>
+})();
+</script>  
 
 
 </body>
