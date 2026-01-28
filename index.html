@@ -1454,75 +1454,100 @@
   
 
 
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-
-// Speichert Checkbox-Zustand, Akkordeonzustand und liefert Suchfilter.
-// Verwendung: <script src="script.js"> direkt vor </body>
-
-(function () {
-  const CHECK_KEY = 'elden_bosses_v1';
-  const ACC_KEY = 'elden_accordion_v1';
-
-  function sanitizeId(s) {
-    return String(s || '')
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '_')
-      .replace(/[^a-z0-9_\-]/g, '');
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-  const accBtns = Array.from(document.querySelectorAll('.accordion'));
-  let accState = [];
-  try {
-    accState = JSON.parse(localStorage.getItem(ACC_KEY) || '[]');
-  } catch (e) { accState = []; }
-
-  accBtns.forEach((btn, idx) => {
-    const panel = btn.nextElementSibling;
-    if (!panel) return;
-
-    // 1️⃣ Standardmäßig geschlossen
-    panel.style.maxHeight = null;
-
-    // 2️⃣ Wiederherstellen gespeicherter geöffneten Panels
-    if (accState.includes(idx)) {
-      panel.style.maxHeight = panel.scrollHeight + 'px';
-    }
-
-    // 3️⃣ Klick-Event zum Öffnen/Schließen
-btn.addEventListener('click', () => {
-  const panel = btn.nextElementSibling;
-  const panelHeight = window.getComputedStyle(panel).maxHeight;
-  const isOpen = panelHeight !== '0px';
-
-  if (isOpen) {
-    // Panel schließen
-    panel.style.maxHeight = null;
-    const p = accState.indexOf(idx);
-    if (p > -1) accState.splice(p, 1);
-  } else {
-    // Panel öffnen
-    panel.style.maxHeight = panel.scrollHeight + 'px';
-    if (!accState.includes(idx)) accState.push(idx);
-  }
-
-  // LocalStorage aktualisieren
-  localStorage.setItem(ACC_KEY, JSON.stringify(accState));
-});
-
-
-    // 4️⃣ ResizeObserver für dynamische Höhe
-    const ro = new ResizeObserver(() => {
-      if (panel.style.maxHeight && panel.style.maxHeight !== '0px') {
-        panel.style.maxHeight = panel.scrollHeight + 'px';
+document.addEventListener('DOMContentLoaded', () => {
+  // --- Accordion-Funktion ---
+  const accordions = document.querySelectorAll('.accordion');
+  accordions.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      const panel = btn.nextElementSibling;
+      if (panel.style.maxHeight) {
+        panel.style.maxHeight = null;
+      } else {
+        panel.style.maxHeight = panel.scrollHeight + "px";
       }
     });
-    ro.observe(panel);
+  });
+
+  // --- Suchfunktion ---
+  const searchInput = document.getElementById('search');
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.toLowerCase();
+    const regions = document.querySelectorAll('.region');
+
+    regions.forEach(region => {
+      const regionName = region.querySelector('.accordion').textContent.toLowerCase();
+      const table = region.querySelector('table');
+      const rows = table.querySelectorAll('tbody tr');
+
+      let anyVisible = false;
+
+      rows.forEach(row => {
+        const rowText = row.textContent.toLowerCase();
+        if (rowText.includes(query) || regionName.includes(query)) {
+          row.style.display = '';
+          anyVisible = true;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      // Region nur anzeigen, wenn mindestens eine Zeile sichtbar ist
+      region.style.display = anyVisible ? '' : 'none';
+    });
+  });
+
+  // --- Fortschrittsanzeige ---
+  const totalBosses = document.querySelectorAll('.boss-table tbody tr').length;
+  const progress = document.createElement('div');
+  progress.id = 'progress';
+  progress.style.margin = '15px 0';
+  progress.style.fontWeight = 'bold';
+  progress.textContent = `Boss-Fortschritt: 0 / ${totalBosses}`;
+  document.body.insertBefore(progress, document.getElementById('search').nextSibling);
+
+  const checkboxes = document.querySelectorAll('.boss-table tbody input[type="checkbox"]');
+
+// Funktion, um Fortschritt zu speichern
+function saveProgress() {
+  const progressData = [];
+  checkboxes.forEach((cb, index) => {
+    progressData[index] = cb.checked;
+  });
+  localStorage.setItem('bossProgress', JSON.stringify(progressData));
+}
+
+// Funktion, um Fortschritt zu laden
+function loadProgress() {
+  const savedData = JSON.parse(localStorage.getItem('bossProgress') || '[]');
+  checkboxes.forEach((cb, index) => {
+    cb.checked = savedData[index] || false;
+  });
+}
+
+// Fortschrittsanzeige aktualisieren
+function updateProgressText() {
+  const checked = document.querySelectorAll('.boss-table tbody input[type="checkbox"]:checked').length;
+  progress.textContent = `Boss-Fortschritt: ${checked} / ${totalBosses}`;
+}
+
+// Eventlistener für jede Checkbox
+checkboxes.forEach(cb => {
+  cb.addEventListener('change', () => {
+    updateProgressText();
+    saveProgress();
   });
 });
 
-</script>  
+// Beim Laden der Seite
+loadProgress();
+updateProgressText();
+
+</script>
 
 
 </body>
