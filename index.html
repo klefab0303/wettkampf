@@ -1567,7 +1567,7 @@
         // Wenn kein Treffer in der Region, komplett ausblenden (inkl. Button)
         region.style.display = anyVisible ? '' : 'none';
         // Option: Wenn Treffer, Panel öffnen automatisch
-        if (anyVisible && panel) {
+        if (query && anyVisible && panel) {
           // nur öffnen, nicht überschreiben gespeicherten Zustand
           panel.style.maxHeight = panel.scrollHeight + 'px';
         }
