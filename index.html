@@ -72,6 +72,33 @@
   color: #fff;
   border-radius: 8px;
 }
+  #speedrun {
+  margin: 20px 0;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+#timer {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+#speedrun button {
+  margin: 0 5px;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+#bestTime {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #555;
+}
+
 
   /* Spaltenbreiten (in Prozent; Summe = 100%)
      1: Checkbox (klein)
@@ -150,6 +177,12 @@
 </div>
 
 <h1>Elden Ring Boss-Checkliste</h1>
+<div id="speedrun">
+  <div id="timer">00:00:00</div>
+  <button id="startRun">▶ Start</button>
+  <button id="stopRun" disabled>⏹ Abbrechen</button>
+  <div id="bestTime"></div>
+</div>
 
 <input type="text" id="search" placeholder="Nach Boss oder Region filtern..." aria-label="Suche Boss oder Region">
 
@@ -1479,6 +1512,91 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  const timerEl = document.getElementById('timer');
+const startBtn = document.getElementById('startRun');
+const stopBtn = document.getElementById('stopRun');
+const bestTimeEl = document.getElementById('bestTime');
+
+let timerInterval = null;
+let runData = JSON.parse(localStorage.getItem('speedrun')) || {
+  running: false,
+  startTime: null,
+  elapsed: 0,
+  bestTime: null
+};
+
+function formatTime(ms) {
+  const total = Math.floor(ms / 1000);
+  const h = String(Math.floor(total / 3600)).padStart(2, '0');
+  const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+  const s = String(total % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+function updateTimer() {
+  const now = Date.now();
+  const elapsed = runData.elapsed + (now - runData.startTime);
+  timerEl.textContent = formatTime(elapsed);
+}
+
+function saveRun() {
+  localStorage.setItem('speedrun', JSON.stringify(runData));
+}
+
+function startRun() {
+  if (runData.running) return;
+
+  runData.running = true;
+  runData.startTime = Date.now();
+  saveRun();
+
+  timerInterval = setInterval(updateTimer, 500);
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+}
+
+function stopRun(aborted = true) {
+  if (!runData.running) return;
+
+  clearInterval(timerInterval);
+
+  const now = Date.now();
+  runData.elapsed += now - runData.startTime;
+  runData.running = false;
+  runData.startTime = null;
+
+  if (!aborted) {
+    if (!runData.bestTime || runData.elapsed < runData.bestTime) {
+      runData.bestTime = runData.elapsed;
+    }
+  }
+
+  saveRun();
+  updateUI();
+}
+
+function resetRun() {
+  clearInterval(timerInterval);
+  runData.running = false;
+  runData.startTime = null;
+  runData.elapsed = 0;
+  saveRun();
+  updateUI();
+}
+
+function updateUI() {
+  timerEl.textContent = formatTime(runData.elapsed);
+  startBtn.disabled = runData.running;
+  stopBtn.disabled = !runData.running;
+
+  if (runData.bestTime) {
+    bestTimeEl.textContent = `🏆 Bestzeit: ${formatTime(runData.bestTime)}`;
+  }
+}
+  startBtn.addEventListener('click', startRun);
+stopBtn.addEventListener('click', () => stopRun(true));
+
+
   // --- Accordion-Funktion ---
   const accordions = document.querySelectorAll('.accordion');
   accordions.forEach(btn => {
@@ -1583,6 +1701,13 @@ document.addEventListener('DOMContentLoaded', () => {
     cb.addEventListener('change', () => {
       updateProgressText();
       updateRegionProgress();
+      if (
+  runData.running &&
+  document.querySelectorAll('.boss-table tbody input[type="checkbox"]:checked').length === totalBosses
+) {
+  stopRun(false);
+}
+
       saveProgress();
     });
   });
@@ -1591,6 +1716,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loadProgress();
   updateProgressText();
   updateRegionProgress();
+  updateUI();
+
+if (runData.running) {
+  timerInterval = setInterval(updateTimer, 500);
+}
+
 
 });
 
