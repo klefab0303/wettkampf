@@ -1593,8 +1593,12 @@ function updateUI() {
     bestTimeEl.textContent = `🏆 Bestzeit: ${formatTime(runData.bestTime)}`;
   }
 }
-  startBtn.addEventListener('click', startRun);
-stopBtn.addEventListener('click', () => stopRun(true));
+startBtn.addEventListener('click', startRun);
+stopBtn.addEventListener('click', () => {
+  stopRun(true);
+  resetRun();
+});
+
 
 
   // --- Accordion-Funktion ---
@@ -1720,6 +1724,7 @@ stopBtn.addEventListener('click', () => stopRun(true));
 
 if (runData.running) {
   timerInterval = setInterval(updateTimer, 500);
+  updateTimer();
 }
 
 
