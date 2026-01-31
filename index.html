@@ -183,13 +183,14 @@
 <input type="text" id="search" placeholder="Nach Boss oder Region filtern..." aria-label="Suche Boss oder Region">
   <button id="statsBtn">📊 Statistik</button>
 
-<div id="statsModal" class="modal">
-  <div class="modal-content">
-    <span id="closeStats">&times;</span>
-    <h2>Boss-Fortschritt</h2>
-    <canvas id="statsChart"></canvas>
-  </div>
+<button id="statsBtn">Statistik anzeigen</button>
+
+<div id="statsModal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
+  background:#fff; padding:20px; border:1px solid #ccc; z-index:999; max-width:90%; width:600px;">
+  <span id="closeStats" style="cursor:pointer; float:right;">✖</span>
+  <canvas id="statsChart" style="width:100%; height:300px;"></canvas>
 </div>
+
 
 
     <section class="region">
