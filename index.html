@@ -9,9 +9,6 @@
   text-align: center;
   margin-bottom: 20px;
 }
-.chart-wrapper {
-  height: 480px;
-}
 
 .elden-logo {
   max-width: 420px;
@@ -1517,7 +1514,6 @@
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -1654,6 +1650,7 @@ function buildStatsChart() {
     if (boxes.length === 0) return;
 
     const done = region.querySelectorAll('tbody input[type="checkbox"]:checked').length;
+
     const percent = Math.round((done / boxes.length) * 100);
 
     labels.push(name);
@@ -1669,51 +1666,28 @@ function buildStatsChart() {
   const ctx = document.getElementById('statsChart');
 
   if (chartInstance) chartInstance.destroy();
-chartInstance = new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels,
-    datasets: [{
-      data: values
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
 
-    plugins: {
-      legend: {
-        display: false
-      },
-      datalabels: {
-        anchor: 'end',
-        align: 'bottom',
-        formatter: v => v + '%',
-        font: {
-          size: 11
-        },
-        offset: 4
-      }
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Fortschritt in %',
+        data: values
+      }]
     },
-
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 100,
-        ticks: {
-          callback: v => v + '%',
-          font: { size: 11 }
-        }
-      },
-      x: {
-        ticks: {
-          font: { size: 11 }
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: v => v + '%'
+          }
         }
       }
     }
-  },
-  plugins: [ChartDataLabels]
-});
+  });
 }
 
 
