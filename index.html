@@ -1668,27 +1668,38 @@ function buildStatsChart() {
   if (chartInstance) chartInstance.destroy();
 
   chartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Fortschritt in %',
-        data: values
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100,
-          ticks: {
-            callback: v => v + '%'
-          }
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Fortschritt in %',
+      data: values
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          callback: v => v + '%',
+          font: { size: 12 } // Schriftgröße Y-Achse
+        }
+      },
+      x: {
+        ticks: {
+          font: { size: 10 }, // <-- hier die Schriftgröße X-Achse kleiner
+          autoSkip: false,    // zeigt alle Labels, wenn du willst
+          maxRotation: 45,    // maximale Drehung der Labels
+          minRotation: 0
         }
       }
     }
-  });
-}
+  }
+});
+
 
 
   // --- Checkbox Eventlistener ---
