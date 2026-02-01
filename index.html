@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elden Ring Boss-Checkliste</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
   :root {
   --er-bg: #0f0f12;
@@ -15,6 +19,30 @@
   --er-text: #e6e6e6;
   --er-text-muted: #b0b0b0;
 }
+  .elden-title {
+  font-family: 'Cinzel', serif;
+  font-size: 48px;
+  text-align: center;
+  margin: 20px 0 40px;
+  color: var(--er-gold-soft);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 6px rgba(201, 162, 77, 0.4),
+    0 0 14px rgba(201, 162, 77, 0.2);
+}
+.elden-divider {
+  width: 60%;
+  height: 1px;
+  margin: 0 auto 30px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--er-gold),
+    transparent
+  );
+}
+
 
   .logo-container {
   text-align: center;
@@ -255,9 +283,9 @@ button:hover {
 
 </head>
 <body>
-<div class="logo-container">
-  <img src="logo.jpeg" alt="Elden Ring Logo" class="elden-logo">
-</div>
+<h1 class="elden-title">Elden Ring<br>Boss-Checkliste</h1>
+<div class="elden-divider"></div>
+
 
 <h1>Elden Ring Boss-Checkliste</h1>
 
