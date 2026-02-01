@@ -1606,7 +1606,12 @@ function computeRegionPercentages() {
   const percentages = [];
 
   regions.forEach(region => {
-    const regionName = region.querySelector('.accordion').textContent;
+    const regionName = region
+  .querySelector('.accordion')
+  .childNodes[0]
+  .textContent
+  .trim();
+
     const checkboxes = region.querySelectorAll('.boss-table tbody input[type="checkbox"]');
     const total = checkboxes.length;
     const done = region.querySelectorAll('.boss-table tbody input[type="checkbox"]:checked').length;
