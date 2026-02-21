@@ -63,7 +63,7 @@ function toggleDisc(header) {
 }
 
 function confirmBtn(btn, success) {
-  btn.textContent = success ? '✓ Gespeichert' : '✗ Fehler';
+  btn.textContent = success ? 'Gespeichert' : 'Fehler';
   btn.style.color = success ? 'var(--success)' : 'var(--danger)';
   setTimeout(() => { btn.textContent = 'Speichern'; btn.style.color = ''; }, 2500);
 }
