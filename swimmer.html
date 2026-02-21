@@ -140,24 +140,44 @@ async function saveAtt(trainingId, btn) {
 async function loadDisciplines(type) {
   const { data } = await db
     .from('swimmer_disciplines')
-    .select('discipline_id, disciplines(name, type, description, team_size)')
+    .select('discipline_id, disciplines(name, type, description)')
     .eq('swimmer_id', swimmerId);
 
   const filtered = (data || []).filter(d => d.disciplines.type === type);
   const container = document.getElementById(type + '-list');
 
   if (filtered.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-light)">Keine ' + (type === 'einzel' ? 'Einzeldisziplinen' : 'Mannschaftsdisziplinen') + ' zugewiesen.</p>';
+    container.innerHTML = '<p style="color:var(--text-light)">Keine ' + (type === 'einzel' ? 'Einzeldisziplinen' : 'Staffeldisziplinen') + ' zugewiesen.</p>';
     return;
+  }
+
+  // Für Staffeln: eigene Position laden
+  let posMap = {};
+  if (type === 'mannschaft') {
+    const discIds = filtered.map(d => d.discipline_id);
+    const { data: positions } = await db
+      .from('relay_positions')
+      .select('discipline_id,swimmer_id,position')
+      .in('discipline_id', discIds);
+    (positions || []).forEach(p => {
+      if (!posMap[p.discipline_id]) posMap[p.discipline_id] = {};
+      posMap[p.discipline_id][p.swimmer_id] = p.position;
+    });
   }
 
   let html = '';
   filtered.forEach(d => {
     const disc = d.disciplines;
+    let posInfo = '';
+    if (type === 'mannschaft') {
+      const myPos = posMap[d.discipline_id] && posMap[d.discipline_id][swimmerId];
+      posInfo = myPos ? ` <span class="badge-position">${myPos}. Teilstrecke</span>` : ' <span class="badge-position">Position offen</span>';
+    }
+
     html += `<div class="disc-item">
       <div class="disc-item-header" onclick="toggleDisc(this)">
         <span><strong>${disc.name}</strong>
-          ${type === 'mannschaft' ? ' <span class="badge-mannschaft">' + disc.team_size + 'er-Staffel</span>' : ''}
+          ${type === 'mannschaft' ? '<span class="badge-staffel">4er-Staffel</span>' + posInfo : ''}
         </span>
         <span style="font-size:0.8rem;color:var(--text-light)">▼</span>
       </div>
@@ -166,6 +186,7 @@ async function loadDisciplines(type) {
   });
   container.innerHTML = html;
 }
+
 
 // ─── ZEITEN (getrennt nach Typ) ────────────────────────────
 async function loadTimes() {
