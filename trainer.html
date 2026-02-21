@@ -282,7 +282,7 @@ async function loadAttendanceOverview() {
     html += `<tr><td>${s.name}</td><td>${s.year}</td><td>${badge}</td></tr>`;
   });
   html += '</tbody></table>';
-  html += `<p style="margin-top:0.8rem;font-size:0.82rem;color:var(--text-light)">✅ Ja: <strong>${ja}</strong> | ❌ Nein: <strong>${nein}</strong> | ⏳ Offen: <strong>${offen}</strong></p>`;
+  html += `<p style="margin-top:0.8rem;font-size:0.82rem;color:var(--text-light)">Ja: <strong>${ja}</strong> |  Nein: <strong>${nein}</strong> |  Offen: <strong>${offen}</strong></p>`;
   if (relevantSwimmers.length === 0) html = '<p style="color:var(--text-light)">Keine Schwimmer zugeordnet.</p>';
   c.innerHTML = html;
 }
