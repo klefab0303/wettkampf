@@ -287,17 +287,16 @@ async function loadAttendanceOverview() {
   c.innerHTML = html;
 }
 
-// ─── DISZIPLIN-ZUORDNUNG (Einzel / Mannschaft getrennt) ───
-async function loadDiscAssignments(type) {
-  const discs = allDisciplines.filter(d => d.type === type);
-  const container = document.getElementById(type + '-disc-list');
+// ─── DISZIPLIN-ZUORDNUNG (Einzel mit Checkboxen) ──────────
+async function loadDiscAssignments_einzel() {
+  const discs = allDisciplines.filter(d => d.type === 'einzel');
+  const container = document.getElementById('einzel-disc-list');
 
   if (discs.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-light)">Keine ' + (type === 'einzel' ? 'Einzel' : 'Mannschafts') + 'disziplinen vorhanden.</p>';
+    container.innerHTML = '<p style="color:var(--text-light)">Keine Einzeldisziplinen vorhanden.</p>';
     return;
   }
 
-  // Alle Zuordnungen laden
   const { data: allAssign } = await db.from('swimmer_disciplines').select('swimmer_id,discipline_id');
   const assignMap = {};
   (allAssign || []).forEach(a => {
@@ -308,12 +307,10 @@ async function loadDiscAssignments(type) {
   let html = '';
   discs.forEach(d => {
     const assigned = assignMap[d.id] || new Set();
-    const count = assigned.size;
     html += `<div class="disc-item">
       <div class="disc-item-header" onclick="toggleDisc(this)">
         <span><strong>${d.name}</strong>
-          ${type === 'mannschaft' ? ' <span class="badge-mannschaft">' + d.team_size + 'er</span>' : ''}
-          <span style="font-size:0.8rem;color:var(--text-light);margin-left:0.5rem">(${count} Schwimmer)</span>
+          <span style="font-size:0.8rem;color:var(--text-light);margin-left:0.5rem">(${assigned.size} Schwimmer)</span>
         </span>
         <span style="font-size:0.8rem;color:var(--text-light)">▼</span>
       </div>
@@ -324,14 +321,14 @@ async function loadDiscAssignments(type) {
       html += `<label><input type="checkbox" value="${s.id}" ${assigned.has(s.id) ? 'checked' : ''}> ${s.name}</label>`;
     });
     html += `</div>
-        <button class="btn btn-sm btn-primary" style="margin-top:0.6rem" onclick="saveDiscAssignment('${d.id}','${type}')">Zuordnung speichern</button>
+        <button class="btn btn-sm btn-primary" style="margin-top:0.6rem" onclick="saveDiscAssignment_einzel('${d.id}')">Zuordnung speichern</button>
       </div>
     </div>`;
   });
   container.innerHTML = html;
 }
 
-async function saveDiscAssignment(discId, type) {
+async function saveDiscAssignment_einzel(discId) {
   const container = document.getElementById('disc-cb-' + discId);
   const checked = [...container.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value);
 
@@ -340,9 +337,101 @@ async function saveDiscAssignment(discId, type) {
     const rows = checked.map(sid => ({ swimmer_id: sid, discipline_id: discId }));
     await db.from('swimmer_disciplines').insert(rows);
   }
-  // Neu laden
-  loadDiscAssignments(type);
+  loadDiscAssignments_einzel();
 }
+
+// ─── STAFFEL-ZUORDNUNG (Mannschaft mit 4 Positionen) ──────
+async function loadDiscAssignments_mannschaft() {
+  const discs = allDisciplines.filter(d => d.type === 'mannschaft');
+  const container = document.getElementById('mannschaft-disc-list');
+
+  if (discs.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-light)">Keine Staffeldisziplinen vorhanden.</p>';
+    return;
+  }
+
+  // Aktuelle Positionen laden
+  const { data: allPos } = await db.from('relay_positions').select('discipline_id,swimmer_id,position');
+  const posMap = {}; // posMap[discId][position] = swimmer_id
+  (allPos || []).forEach(p => {
+    if (!posMap[p.discipline_id]) posMap[p.discipline_id] = {};
+    posMap[p.discipline_id][p.position] = p.swimmer_id;
+  });
+
+  let html = '';
+  discs.forEach(d => {
+    const positions = posMap[d.id] || {};
+    const filledCount = Object.keys(positions).length;
+
+    html += `<div class="disc-item">
+      <div class="disc-item-header" onclick="toggleDisc(this)">
+        <span><strong>${d.name}</strong>
+          <span class="badge-staffel">4er-Staffel</span>
+          <span style="font-size:0.8rem;color:var(--text-light);margin-left:0.5rem">(${filledCount}/4 besetzt)</span>
+        </span>
+        <span style="font-size:0.8rem;color:var(--text-light)">▼</span>
+      </div>
+      <div class="disc-item-body">
+        ${d.description ? '<p style="margin-bottom:0.8rem;font-style:italic">' + d.description + '</p>' : ''}
+        <div class="relay-grid" id="relay-grid-${d.id}">`;
+
+    for (let pos = 1; pos <= 4; pos++) {
+      const currentSwimmer = positions[pos] || '';
+      html += `<div class="relay-slot">
+        <label>${pos}. Teilstrecke</label>
+        <select data-pos="${pos}">
+          <option value="">– nicht besetzt –</option>`;
+      allSwimmers.forEach(s => {
+        html += `<option value="${s.id}" ${s.id === currentSwimmer ? 'selected' : ''}>${s.name}</option>`;
+      });
+      html += `</select></div>`;
+    }
+
+    html += `</div>
+        <button class="btn btn-sm btn-primary" style="margin-top:0.6rem" onclick="saveRelayPositions('${d.id}')">Staffel speichern</button>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+async function saveRelayPositions(discId) {
+  const grid = document.getElementById('relay-grid-' + discId);
+  const selects = grid.querySelectorAll('select');
+
+  // Prüfen ob ein Schwimmer doppelt ausgewählt ist
+  const chosen = [];
+  let duplicate = false;
+  selects.forEach(sel => {
+    if (sel.value && chosen.includes(sel.value)) { duplicate = true; }
+    if (sel.value) chosen.push(sel.value);
+  });
+  if (duplicate) { alert('Ein Schwimmer kann nur eine Position haben.'); return; }
+
+  // Alte Positionen löschen
+  await db.from('relay_positions').delete().eq('discipline_id', discId);
+
+  // Neue einfügen
+  const rows = [];
+  selects.forEach(sel => {
+    if (sel.value) {
+      rows.push({ discipline_id: discId, swimmer_id: sel.value, position: parseInt(sel.dataset.pos) });
+    }
+  });
+  if (rows.length > 0) {
+    const { error } = await db.from('relay_positions').insert(rows);
+    if (error) { alert('Fehler: ' + error.message); return; }
+  }
+
+  // Auch in swimmer_disciplines eintragen (damit Zeiten-Tab funktioniert)
+  await db.from('swimmer_disciplines').delete().eq('discipline_id', discId);
+  if (chosen.length > 0) {
+    await db.from('swimmer_disciplines').insert(chosen.map(sid => ({ swimmer_id: sid, discipline_id: discId })));
+  }
+
+  loadDiscAssignments_mannschaft();
+}
+
 
 // ─── ZEITEN FÜR SCHWIMMER ─────────────────────────────────
 async function loadTimesForSwimmer() {
