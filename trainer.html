@@ -144,8 +144,9 @@ let allDisciplines = [];
   renderTrainingsList();
   fillTrainingSelect();
   fillSwimmerSelect();
-  loadDiscAssignments_einzel();
-  loadDiscAssignments_mannschaft();
+  loadDiscAssignments('einzel');
+  fillStaffelDiscSelect();
+  loadStaffeln();
   loadAccounts();
 })();
 
