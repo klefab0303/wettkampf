@@ -77,13 +77,20 @@
   <!-- ═══ TAB: MANNSCHAFT-DISZIPLINEN ═══ -->
   <div class="tab-content" id="tab-mannschaft">
     <div class="card">
-      <h2>Mannschaftsdisziplinen – Zuordnung</h2>
-      <p style="margin-bottom:1rem;color:var(--text-light);font-size:0.88rem;">
-        Klicke auf eine Disziplin, um Schwimmer der Staffel zuzuordnen.
-      </p>
-      <div id="mannschaft-disc-list"><div class="spinner">Lädt …</div></div>
+      <h2>Staffeln verwalten</h2>
+      <div class="form-row" style="margin-bottom:1rem;align-items:flex-end">
+        <div class="form-group" style="flex:1">
+          <label for="staffel-disc-select">Disziplin</label>
+          <select id="staffel-disc-select">
+            <option value="">– Disziplin wählen –</option>
+          </select>
+        </div>
+        <div><button class="btn btn-primary" onclick="addStaffel()">Staffel hinzufügen</button></div>
+      </div>
+      <div id="staffel-list"><div class="spinner">Lädt …</div></div>
     </div>
   </div>
+
 
   <!-- ═══ TAB: ZEITEN ═══ -->
   <div class="tab-content" id="tab-times">
