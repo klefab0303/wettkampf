@@ -141,12 +141,13 @@ async function loadDisciplines(type) {
   const container = document.getElementById(type + '-list');
 
   if (type === 'einzel') {
+    // Nur Einzeldisziplinen laden (über Join mit disciplines filtern)
     const { data } = await db
       .from('swimmer_disciplines')
-      .select('discipline_id, disciplines(name, description)')
+      .select('discipline_id, disciplines(name, description, type)')
       .eq('swimmer_id', swimmerId);
 
-    const filtered = (data || []);
+    const filtered = (data || []).filter(d => d.disciplines.type === 'einzel');
     if (filtered.length === 0) {
       container.innerHTML = '<p style="color:var(--text-light)">Keine Einzeldisziplinen zugewiesen.</p>';
       return;
@@ -167,7 +168,7 @@ async function loadDisciplines(type) {
     // Mannschaft: Staffeln laden, in denen dieser Schwimmer eingeteilt ist
     const { data: positions } = await db
       .from('relay_positions')
-      .select('position, staffel_id, staffeln(id, discipline_id, disciplines(name))')
+      .select('position, staffel_id, staffeln(id, discipline_id, disciplines(name, description))')
       .eq('swimmer_id', swimmerId);
 
     if (!positions || positions.length === 0) {
@@ -175,20 +176,54 @@ async function loadDisciplines(type) {
       return;
     }
 
+    // Für jede Staffel alle Positionen laden
+    const staffelIds = positions.map(p => p.staffel_id);
+    const { data: allPos } = await db
+      .from('relay_positions')
+      .select('staffel_id, position, swimmer_id, swimmers(name)')
+      .in('staffel_id', staffelIds)
+      .order('position');
+
+    // Gruppieren nach staffel_id
+    const posMap = {};
+    (allPos || []).forEach(p => {
+      if (!posMap[p.staffel_id]) posMap[p.staffel_id] = [];
+      posMap[p.staffel_id].push(p);
+    });
+
     let html = '';
     positions.forEach(p => {
       const discName = p.staffeln.disciplines.name;
+      const discDesc = p.staffeln.disciplines.description || '';
+      const teammates = posMap[p.staffel_id] || [];
+
       html += `<div class="disc-item">
-        <div class="disc-item-header">
+        <div class="disc-item-header" onclick="toggleDisc(this)">
           <span><strong>${discName}</strong>
-            <span class="badge-mannschaft">${p.position}. Teilstrecke</span>
+            <span class="badge-mannschaft">Deine Position: ${p.position}. Teilstrecke</span>
           </span>
+          <span style="font-size:0.8rem;color:var(--text-light)">▼</span>
         </div>
-      </div>`;
+        <div class="disc-item-body">
+          ${discDesc ? '<p style="margin-bottom:0.8rem;font-style:italic;color:var(--text-light)">' + discDesc + '</p>' : ''}
+          <div class="staffel-overview">`;
+
+      for (let pos = 1; pos <= 4; pos++) {
+        const member = teammates.find(t => t.position === pos);
+        const name = member ? member.swimmers.name : '– nicht besetzt –';
+        const isMe = member && member.swimmer_id === swimmerId;
+        html += `<div class="staffel-member${isMe ? ' is-me' : ''}">
+          <span class="member-pos">${pos}.</span>
+          <span class="member-name">${name}</span>
+        </div>`;
+      }
+
+      html += `</div></div></div>`;
     });
     container.innerHTML = html;
   }
 }
+
 
 
 
