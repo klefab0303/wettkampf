@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login – Wettkampfschwimmen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <div class="Wettkampfschwimmen-header">
+        <div class="badge">Wettkampfschwimmen</div>
+        <h1>Wettkampf & Training</h1>
+        <p>Interne Vereinsanwendung</p>
+      </div>
+
+      <div id="login-error" class="error-msg"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">E-Mail-Adresse</label>
+          <input type="email" id="email" placeholder="name@verein.de" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Passwort</label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" id="login-btn">Anmelden</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Falls bereits eingeloggt → direkt zur richtigen Seite weiterleiten
+    (async () => {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) return;
+
+      const { data: userData } = await db
+        .from('users').select('role').eq('id', session.user.id).single();
+
+      if (userData?.role === 'trainer') {
+        window.location.href = 'trainer.html';
+      } else if (userData?.role === 'schwimmer') {
+        window.location.href = 'swimmer.html';
+      }
+    })();
+
+    // Login-Formular absenden
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError('login-error');
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn      = document.getElementById('login-btn');
+
+      btn.disabled    = true;
+      btn.textContent = 'Anmelden …';
+
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        showError('login-error', 'E-Mail oder Passwort falsch.');
+        btn.disabled    = false;
+        btn.textContent = 'Anmelden';
+        return;
+      }
+
+      // Rolle und Kontostatus prüfen
+      const { data: userData } = await db
+        .from('users').select('role, active').eq('id', data.user.id).single();
+
+      if (!userData) {
+        showError('login-error', 'Kein Zugang. Bitte Trainer kontaktieren.');
+        await db.auth.signOut();
+        btn.disabled    = false;
+        btn.textContent = 'Anmelden';
+        return;
+      }
+
+      if (userData.active === false) {
+        showError('login-error', 'Konto deaktiviert. Bitte Trainer kontaktieren.');
+        await db.auth.signOut();
+        btn.disabled    = false;
+        btn.textContent = 'Anmelden';
+        return;
+      }
+
+      // Weiterleitung nach Rolle
+      window.location.href = userData.role === 'trainer' ? 'trainer.html' : 'swimmer.html';
+    });
+  </script>
+</body>
+</html>

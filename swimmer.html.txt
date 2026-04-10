@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mein Bereich – Wettkampfschwimmen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="logo"><span>Wettkampfschwimmen</span> Wettkampf-App</div>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-user"></span>
+    <button class="logout-btn" onclick="logout()">Abmelden</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn" data-tab="tab-training">Training</button>
+    <button class="tab-btn" data-tab="tab-einzel">Einzel</button>
+    <button class="tab-btn" data-tab="tab-mannschaft">Mannschaft</button>
+    <button class="tab-btn" data-tab="tab-times">Zeiten</button>
+  </div>
+
+  <!-- Training -->
+  <div class="tab-content" id="tab-training">
+    <div class="card">
+      <h2>Meine Trainings</h2>
+      <p style="margin-bottom:1rem;color:var(--text-light);font-size:0.88rem;">
+        Du siehst nur Trainings, zu denen du eingeteilt bist.
+      </p>
+      <div id="training-list"><div class="spinner">Lädt …</div></div>
+    </div>
+  </div>
+
+  <!-- Einzel -->
+  <div class="tab-content" id="tab-einzel">
+    <div class="card">
+      <h2>Einzeldisziplinen</h2>
+      <div id="einzel-list"><div class="spinner">Lädt …</div></div>
+    </div>
+  </div>
+
+  <!-- Mannschaft -->
+  <div class="tab-content" id="tab-mannschaft">
+    <div class="card">
+      <h2>Staffeln</h2>
+      <div id="mannschaft-list"><div class="spinner">Lädt …</div></div>
+    </div>
+  </div>
+
+  <!-- Zeiten -->
+  <div class="tab-content" id="tab-times">
+    <div class="card">
+      <h2>Meine Zeiten</h2>
+      <p style="margin-bottom:0.5rem;color:var(--text-light);font-size:0.88rem;">Format: <code>mm:ss,hh</code> (z.B. <code>1:23,45</code>)</p>
+      <div class="section-title">Einzeldisziplinen</div>
+      <div id="times-einzel"></div>
+      <div class="section-title" style="margin-top:1.5rem">Teilstrecken</div>
+      <div id="times-teilstrecken"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="app.js"></script>
+<script src="swimmer.js"></script>
+</body>
+</html>

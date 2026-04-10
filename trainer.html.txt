@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trainer-Dashboard – Wettkampfschwimmen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="logo"><span>Wettkampfschwimmen</span> Trainer-Dashboard</div>
+  <div class="nav-right">
+    <span class="nav-user">Trainer</span>
+    <button class="logout-btn" onclick="logout()">Abmelden</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab-btn" data-tab="tab-trainings">Trainings</button>
+    <button class="tab-btn" data-tab="tab-attendance">Anwesenheit</button>
+    <button class="tab-btn" data-tab="tab-einzel">Einzel</button>
+    <button class="tab-btn" data-tab="tab-mannschaft">Mannschaft</button>
+    <button class="tab-btn" data-tab="tab-times">Zeiten</button>
+    <button class="tab-btn" data-tab="tab-rechner">Rechner</button>
+    <button class="tab-btn" data-tab="tab-accounts">Konten</button>
+  </div>
+
+  <!-- Trainings verwalten -->
+  <div class="tab-content" id="tab-trainings">
+    <div class="card">
+      <h2>Training erstellen</h2>
+      <div class="form-row">
+        <div class="form-group"><label for="t-date">Datum</label><input type="date" id="t-date"></div>
+        <div class="form-group"><label for="t-start">Von</label><input type="time" id="t-start"></div>
+        <div class="form-group"><label for="t-end">Bis</label><input type="time" id="t-end"></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:0.5rem" onclick="createTraining()">Training anlegen</button>
+    </div>
+    <div class="card">
+      <h2>Alle Trainings</h2>
+      <div id="all-trainings"><div class="spinner">Lädt …</div></div>
+    </div>
+  </div>
+
+  <!-- Anwesenheit -->
+  <div class="tab-content" id="tab-attendance">
+    <div class="card">
+      <h2>Anwesenheit</h2>
+      <div class="form-group" style="max-width:300px;margin-bottom:1rem">
+        <label for="select-training">Training auswählen</label>
+        <select id="select-training" onchange="loadAttendanceOverview()"><option value="">– bitte wählen –</option></select>
+      </div>
+      <div id="attendance-overview"></div>
+    </div>
+  </div>
+
+  <!-- Einzel-Disziplinen -->
+  <div class="tab-content" id="tab-einzel">
+    <div class="card">
+      <h2>Einzel – Zuordnung</h2>
+      <div id="einzel-disc-list"><div class="spinner">Lädt …</div></div>
+    </div>
+  </div>
+
+  <!-- Mannschaft / Staffeln -->
+  <div class="tab-content" id="tab-mannschaft">
+    <div class="card">
+      <h2>Staffeln verwalten</h2>
+      <div class="form-row" style="margin-bottom:1rem;align-items:flex-end">
+        <div class="form-group" style="flex:1">
+          <label for="staffel-disc-select">Disziplin</label>
+          <select id="staffel-disc-select"><option value="">– Disziplin wählen –</option></select>
+        </div>
+        <div><button class="btn btn-primary" onclick="addStaffel()">Staffel hinzufügen</button></div>
+      </div>
+      <div id="staffel-list"><div class="spinner">Lädt …</div></div>
+    </div>
+  </div>
+
+  <!-- Zeiten -->
+  <div class="tab-content" id="tab-times">
+    <div class="card">
+      <h2>Zeiten verwalten</h2>
+      <div class="form-group" style="max-width:300px;margin-bottom:1rem">
+        <label for="select-swimmer-times">Schwimmer</label>
+        <select id="select-swimmer-times" onchange="loadTimesForSwimmer()"><option value="">– bitte wählen –</option></select>
+      </div>
+      <div class="section-title">Einzeldisziplinen</div>
+      <div id="trainer-times-einzel"></div>
+      <div class="section-title" style="margin-top:2rem">Teilstrecken</div>
+      <div id="trainer-times-teilstrecken"><p style="color:var(--text-light);font-size:0.88rem">Wähle einen Schwimmer.</p></div>
+    </div>
+  </div>
+
+  <!-- Staffel-Rechner -->
+  <div class="tab-content" id="tab-rechner">
+    <div class="card">
+      <h2>Staffel-Rechner</h2>
+      <p style="margin-bottom:1rem;color:var(--text-light);font-size:0.88rem">
+        Wähle eine Staffel und die verfügbaren Schwimmer – der Rechner findet die schnellste Aufstellung.
+      </p>
+      <div class="form-row" style="align-items:flex-end;margin-bottom:1rem">
+        <div class="form-group" style="flex:1">
+          <label>Staffel wählen:</label>
+          <select id="rechner-disc" onchange="berechneStaffel()" style="padding:8px;border:1.5px solid var(--border);border-radius:6px;width:100%">
+            <option value="">– bitte wählen –</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:1rem">
+        <label>Verfügbare Schwimmer:</label>
+        <div id="rechner-swimmer-filter" class="checkbox-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem"></div>
+        <div style="margin-top:0.5rem">
+          <button class="btn btn-sm btn-secondary" onclick="rechnerSelectAll(true)">Alle auswählen</button>
+          <button class="btn btn-sm btn-secondary" style="margin-left:0.3rem" onclick="rechnerSelectAll(false)">Alle abwählen</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="berechneStaffel()">Berechnen</button>
+      <div id="rechner-result" style="margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <!-- Konten -->
+  <div class="tab-content" id="tab-accounts">
+    <div class="card">
+      <h2>Schwimmerkonten</h2>
+      <div id="accounts-list"><div class="spinner">Lädt …</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="app.js"></script>
+<script src="trainer.js"></script>
+</body>
+</html>
